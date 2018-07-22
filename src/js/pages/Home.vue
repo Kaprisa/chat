@@ -47,11 +47,43 @@
             }
         },
         async mounted() {
+            this.socket.emit('conn', localStorage.getItem('id'))
+            this.socket.on('conn', ({user_id, sockets, socket_id}) => {
+                this.$auth.user.socket_id = socket_id
+                // const contact = this.contacts.find(c => c.id === parseInt(user_id))
+                // if (contact) {
+                //     contact.online = true
+                //     contact.socket_id = socket_id
+                // }
+                sockets.forEach(s => {
+                    const cont = this.contacts.find(c => c.socket_id === s)
+                    console.log(cont)
+                    if (cont)
+                        cont.online = true
+                })
+                this.search()
+            })
+            this.socket.on('connected', ({user_id, socket_id}) => {
+                const contact = this.contacts.find(c => c.id ===  parseInt(user_id))
+                contact.online = true
+                contact.socket_id = socket_id
+                this.search()
+            })
+            this.socket.on('disconnected', user_id => {
+                const contact = this.contacts.find(c => c.id === parseInt(user_id))
+                if (contact) {
+                    contact.online = false
+                    contact.last_seen = Date.now()
+                    this.search()
+                }
+            })
             this.socket.on('message', msg => {
                 const contact = this.contacts.find(c => c.id === msg.from_id)
                 if (!contact.messages) contact.messages = []
                 contact.messages = [...contact.messages, msg]
                 this.search()
+                if (this.active.id === contact.id)
+                    this.active = {...contact}
             })
             this.socket.on('messages', ({from_id, to_id, messages}) => {
                 if (from_id !== this.$auth.user.id) return
@@ -81,6 +113,9 @@
                 }]
                 this.search()
                 this.socket.emit('message', ({msg: text, from_id, to_id}))
+                this.active = {...this.active}
+                // const chatEl = document.getElementsByClassName('chat__messages-box')[0]
+                // chatEl.scrollTop = chatEl.scrollHeight
             },
             search(v) {
                 if (v)

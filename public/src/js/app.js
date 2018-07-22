@@ -1954,6 +1954,11 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = void 0;
+
+var _moment = _interopRequireDefault(__webpack_require__(/*! moment */ "../node_modules/moment/moment.js"));
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
 //
 //
 //
@@ -1965,6 +1970,11 @@ exports.default = void 0;
 //
 //
 var _default = {
+  data: function data() {
+    return {
+      moment: _moment.default
+    };
+  },
   props: {
     contact: Object
   }
@@ -2360,12 +2370,59 @@ var _default = {
     regeneratorRuntime.mark(function _callee() {
       var _this = this;
 
-      var _ref2, data;
+      var _ref4, data;
 
       return regeneratorRuntime.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
+              this.socket.emit('conn', localStorage.getItem('id'));
+              this.socket.on('conn', function (_ref) {
+                var user_id = _ref.user_id,
+                    sockets = _ref.sockets,
+                    socket_id = _ref.socket_id;
+                _this.$auth.user.socket_id = socket_id; // const contact = this.contacts.find(c => c.id === parseInt(user_id))
+                // if (contact) {
+                //     contact.online = true
+                //     contact.socket_id = socket_id
+                // }
+
+                sockets.forEach(function (s) {
+                  var cont = _this.contacts.find(function (c) {
+                    return c.socket_id === s;
+                  });
+
+                  console.log(cont);
+                  if (cont) cont.online = true;
+                });
+
+                _this.search();
+              });
+              this.socket.on('connected', function (_ref2) {
+                var user_id = _ref2.user_id,
+                    socket_id = _ref2.socket_id;
+
+                var contact = _this.contacts.find(function (c) {
+                  return c.id === parseInt(user_id);
+                });
+
+                contact.online = true;
+                contact.socket_id = socket_id;
+
+                _this.search();
+              });
+              this.socket.on('disconnected', function (user_id) {
+                var contact = _this.contacts.find(function (c) {
+                  return c.id === parseInt(user_id);
+                });
+
+                if (contact) {
+                  contact.online = false;
+                  contact.last_seen = Date.now();
+
+                  _this.search();
+                }
+              });
               this.socket.on('message', function (msg) {
                 var contact = _this.contacts.find(function (c) {
                   return c.id === msg.from_id;
@@ -2375,43 +2432,45 @@ var _default = {
                 contact.messages = _toConsumableArray(contact.messages).concat([msg]);
 
                 _this.search();
+
+                if (_this.active.id === contact.id) _this.active = _objectSpread({}, contact);
               });
-              this.socket.on('messages', function (_ref) {
-                var from_id = _ref.from_id,
-                    to_id = _ref.to_id,
-                    messages = _ref.messages;
+              this.socket.on('messages', function (_ref3) {
+                var from_id = _ref3.from_id,
+                    to_id = _ref3.to_id,
+                    messages = _ref3.messages;
                 if (from_id !== _this.$auth.user.id) return;
                 _this.contacts.find(function (c) {
                   return c.id === to_id;
                 }).messages = messages;
                 _this.active = _objectSpread({}, _this.active);
               });
-              _context.prev = 2;
-              _context.next = 5;
+              _context.prev = 6;
+              _context.next = 9;
               return this.$axios.get('/api/users');
 
-            case 5:
-              _ref2 = _context.sent;
-              data = _ref2.data;
+            case 9:
+              _ref4 = _context.sent;
+              data = _ref4.data;
               // user не всегда успевает прийти
               this.contacts = data.filter(function (c) {
                 return c.email !== _this.$auth.user.email;
               });
               this.search();
-              _context.next = 14;
+              _context.next = 18;
               break;
 
-            case 11:
-              _context.prev = 11;
-              _context.t0 = _context["catch"](2);
+            case 15:
+              _context.prev = 15;
+              _context.t0 = _context["catch"](6);
               console.error(_context.t0);
 
-            case 14:
+            case 18:
             case "end":
               return _context.stop();
           }
         }
-      }, _callee, this, [[2, 11]]);
+      }, _callee, this, [[6, 15]]);
     }));
 
     return function mounted() {
@@ -2435,6 +2494,8 @@ var _default = {
         from_id: from_id,
         to_id: to_id
       });
+      this.active = _objectSpread({}, this.active); // const chatEl = document.getElementsByClassName('chat__messages-box')[0]
+      // chatEl.scrollTop = chatEl.scrollHeight
     },
     search: function search(v) {
       var _this2 = this;
@@ -39503,7 +39564,16 @@ var render = function() {
             ]),
             _vm._v(" "),
             _c("span", { staticClass: "header__last-seen" }, [
-              _vm._v("last seen 4 hours ago")
+              _vm._v(
+                _vm._s(
+                  _vm.contact.online
+                    ? "ONLINE"
+                    : _vm.contact.last_seen
+                      ? "last seen " +
+                        _vm.moment(_vm.contact.last_seen).minutes()
+                      : ""
+                )
+              )
             ])
           ]
         : _vm._e()
@@ -53938,6 +54008,7 @@ function () {
     _classCallCheck(this, Auth);
 
     this.axios = axios;
+    this.user = {};
     var token = localStorage.getItem('token');
 
     if (token) {
@@ -53993,6 +54064,7 @@ function () {
     value: function logout() {
       Auth.authenticated = false;
       localStorage.removeItem('token');
+      localStorage.removeItem('id');
 
       _router.default.push('/login');
     }
@@ -54003,6 +54075,7 @@ function () {
       this.token = "".concat(data['token']);
       this.axios.defaults.headers.common['Authorization'] = this.token;
       localStorage.setItem('token', data.token);
+      localStorage.setItem('id', data.user.id);
       this.user = data.user;
       Auth.authenticated = true;
     }

@@ -8,6 +8,7 @@ export default class Auth {
 
     constructor(axios) {
         this.axios = axios
+        this.user = {}
         let token = localStorage.getItem('token')
         if (token) {
             Auth.pending = true
@@ -58,6 +59,7 @@ export default class Auth {
     logout() {
         Auth.authenticated = false
         localStorage.removeItem('token')
+        localStorage.removeItem('id')
         router.push('/login')
     }
 
@@ -65,6 +67,7 @@ export default class Auth {
         this.token = `${data['token']}`
         this.axios.defaults.headers.common['Authorization'] = this.token
         localStorage.setItem('token', data.token)
+        localStorage.setItem('id', data.user.id)
         this.user = data.user
         Auth.authenticated = true
     }

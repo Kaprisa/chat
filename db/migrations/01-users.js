@@ -9,6 +9,7 @@ exports.up = async query => {
           password_hash varchar(70) COLLATE utf8mb4_unicode_ci NOT NULL,
           salt varchar(70) COLLATE utf8mb4_unicode_ci NOT NULL,
           image varchar(70) COLLATE utf8mb4_unicode_ci NULL,
+          last_seen timestamp NULL,
           PRIMARY KEY (id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;`, []
         )

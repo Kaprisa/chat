@@ -39,6 +39,9 @@ class User {
     static async checkPassword(user, password) {
         return crypto.pbkdf2Sync(password, user.salt, config.crypto.hash.iterations, config.crypto.hash.length, 'sha1') === user.passwordHash
     }
+    static async setLastSeen(id) {
+        await query('UPDATE users where id=? set last_seen=NOW()', [id])
+    }
 }
 
 module.exports = User
