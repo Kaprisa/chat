@@ -2,7 +2,7 @@
     <form class="form auth">
         <h2 class="title">{{ isLogin ? 'Авторизация' : 'Регистрация'}}</h2>
         <photo-uploader v-if="!isLogin" @upload-file="f => user.image = f" :filename="user.image"/>
-        <form-field placeholder="Введите ваше имя" v-if="!isLogin" :value="user.email" @value-change="v => user.name = v" />
+        <form-field placeholder="Введите ваше имя" v-if="!isLogin" :value="user.name" @value-change="v => user.name = v" />
         <form-field placeholder="Введите ваш E-Mail" :value="user.email" @value-change="v => user.email = v" />
         <form-field placeholder="Введите ваш пароль" type="password" :value="user.password" @value-change="v => user.password = v" />
         <button @click.prevent="submit" class="btn">{{ isLogin ? 'Войти' : 'Зарегистрироваться'}}</button>

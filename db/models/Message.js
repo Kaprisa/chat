@@ -8,7 +8,7 @@ class Message {
     static async create({ from_id, to_id, text }) {
         try {
             Date.now()
-            await query(`INSERT INTO messages SET from_id=?, to_id=?, text=?, created_at=?;`, [from_id, to_id, text, Date.now()])
+            await query(`INSERT INTO messages SET from_id=?, to_id=?, created_at=NOW(), text=?;`, [from_id, to_id, text])
             return 'Сообщение успешно добавлено'
         } catch (e) {
             errorHandler(e)
@@ -27,6 +27,14 @@ class Message {
     static async get({ from_id, to_id }) {
         try {
             return await query('SELECT * FROM messages WHERE from_id=? AND to_id=? OR from_id=? AND to_id=? ORDER BY created_at;', [from_id, to_id, to_id, from_id])
+        } catch (e) {
+            errorHandler(e)
+            return []
+        }
+    }
+    static async last({ from_id, to_id }) {
+        try {
+            return await query('SELECT * FROM messages WHERE from_id=? AND to_id=? OR from_id=? AND to_id=? ORDER BY created_at limit 1;', [from_id, to_id, to_id, from_id])
         } catch (e) {
             errorHandler(e)
             return []

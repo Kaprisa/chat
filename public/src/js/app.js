@@ -39404,7 +39404,16 @@ var render = function() {
       ]),
       _vm._v(" "),
       _c("span", { staticClass: "contact__last-msg" }, [
-        _vm._v(_vm._s(_vm.contact.message))
+        _vm._v(
+          _vm._s(
+            _vm.contact.last_message &&
+              "" +
+                (_vm.contact.last_message.from_id === _vm.$auth.user.id
+                  ? "Вы: "
+                  : "") +
+                _vm.contact.last_message.text
+          )
+        )
       ]),
       _vm._v(" "),
       _c("span", { staticClass: "contact__time" }, [
@@ -39901,7 +39910,7 @@ var render = function() {
       _vm._v(" "),
       !_vm.isLogin
         ? _c("form-field", {
-            attrs: { placeholder: "Введите ваше имя", value: _vm.user.email },
+            attrs: { placeholder: "Введите ваше имя", value: _vm.user.name },
             on: {
               "value-change": function(v) {
                 return (_vm.user.name = v)
