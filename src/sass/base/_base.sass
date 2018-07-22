@@ -1,0 +1,82 @@
+html
+  font-size: 62.5% //1rem=10px
+  @include respond(tab-land)
+    font-size: 56.25% //1rem=9px
+  @include respond(tab-port)
+    font-size: 50% //1rem=8px
+  @include respond(big-desctop)
+    font-size: 75% //1rem=12px
+
+body
+  box-sizing: border-box
+  overflow: hidden
+  @include respond(tab-port)
+    padding: 0
+
+*, *::after, *::before
+  margin: 0
+  padding: 0
+  box-sizing: inherit
+
+::selection
+  background-color: $color-primary
+  color: $color-white
+
+*::-webkit-input-placeholder
+  color: #666
+  opacity: 1
+
+*:-moz-placeholder
+  color: #666
+  opacity: 1
+
+*::-moz-placeholder
+  color: #666
+  opacity: 1
+
+*:-ms-input-placeholder
+  color: #666
+  opacity: 1
+
+body input:focus:required:invalid,
+body textarea:focus:required:invalid
+  color: #666
+body input:required:valid,
+body textarea:required:valid
+  color: #666
+
+.app
+  width: 100vw
+  height: 100vh
+  background-image: url("~/images/home.jpeg")
+  background-size: cover
+  z-index: 1
+  position: relative
+  > *
+    z-index: 3
+  &::before, &::after
+    z-index: -1
+    content: ''
+    position: absolute
+    top: 0
+    left: 0
+    right: 0
+    bottom: 0
+  &::before
+    background-color: rgba($color-black, .8)
+  &::after
+    background-color: rgba($color-black, .95)
+    @supports (clip-path: polygon(0 0, 85% 0, 70% 50vh, 85% 100%, 0 100%)) or (-webkit-clip-path: polygon(0 0, 85% 0, 70% 50vh, 85% 100%, 0 100%))
+      clip-path: polygon(0 0, 85% 0, 70% 50vh, 85% 100%, 0 100%)
+
+
+.slide-fade-enter-active
+  transition: all .3s ease
+
+.slide-fade-leave-active
+  transition: all .5s cubic-bezier(1.0, 0.5, 0.8, 1.0)
+
+.slide-fade-enter, .slide-fade-leave-to
+  transform: translateX(10px)
+  opacity: 0
+

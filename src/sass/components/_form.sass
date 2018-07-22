@@ -1,0 +1,31 @@
+.form
+  @include centalized
+  text-align: center
+  background-color: $color-light
+  border-radius: 6px
+  width: 80vw
+  height: 80vh
+  display: flex
+  &__group
+    margin-bottom: 2rem
+    width: 80%
+  &__label
+    text-align: left
+    font-size: $default-font-size
+    font-weight: 500
+    font-family: $default-font
+    display: block
+    margin-bottom: 0.8rem
+    color: $color-gray
+  &__field
+    @include card
+    background-color: $color-white
+    outline: none
+    border: none
+    width: 70%
+    font-size: $default-font-size
+    padding: 1.6rem 1rem
+    color: $color-black
+
+
+
