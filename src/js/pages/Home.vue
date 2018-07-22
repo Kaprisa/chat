@@ -3,12 +3,14 @@
         <div class="form">
             <sidebar>
                 <search />
-               <contact @click="active = index" v-for="c, index in contacts" :key="c.name" :contact="c" :active="index === active"/>
+               <contact @click="active = index" v-for="c, index in contacts" :key="c.email" :contact="c" :active="index === active"/>
             </sidebar>
-            <div class="chat">
+            <div class="chat" v-if="contacts[active]">
                 <v-header :contact="contacts[active]"/>
                 <div class="chat__messages-box">
-                    <message v-for="m, index in messages" :message="{sender: m.sender, text: m.text}" :key="`message${index}`"/>
+                    <template v-if="contacts[active].messages">
+                        <message v-for="m, index in contacts[active].messages" :message="{sender: m.sender, text: m.text}" :key="`message${index}`"/>
+                    </template>
                 </div>
                 <v-textarea @send="send"/>
             </div>
@@ -39,16 +41,18 @@
             return {
                 socket: io('localhost:3000'),
                 active: 0,
-                contacts: [],
-                messages: []
+                contacts: []
             }
         },
         async mounted() {
-            this.socket.on('message', (text) => {
-                this.messages.push({
-                    text,
-                    sender: 'other'
-                })
+            this.socket.on('message', ({msg, email}) => {
+                const contact = this.contacts.find(c => c.email === email)
+                if (!contact.messages) contact.messages = []
+                contact.messages = [...contact.messages, {
+                    text: msg,
+                    sender: email
+                }]
+                this.contacts = [...this.contacts]
             })
             try {
                 const { data } = await this.$axios.get('/api/users')
@@ -59,11 +63,15 @@
         },
         methods: {
             send(text) {
-                this.messages.push({
+                const contact = this.contacts[this.active]
+                if (!contact.messages)
+                    contact.messages = []
+                contact.messages = [...contact.messages, {
                     text,
-                    sender: 'i'
-                })
-                this.socket.emit('message', text)
+                    sender: this.$auth.user.email
+                }]
+                this.contacts = [...this.contacts]
+                this.socket.emit('message', ({msg: text, email: this.$auth.user.email}))
             }
         }
     }

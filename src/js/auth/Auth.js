@@ -23,7 +23,7 @@ export default class Auth {
             if (!data)
                 throw Error('Not authenticated')
             Auth.pending = false
-            this.user = res.data
+            this.user = data
             this.token = token
             this.axios.defaults.headers.common['Authorization'] = this.token
             Auth.authenticated = true
@@ -40,7 +40,8 @@ export default class Auth {
         return new Promise((resolve, reject) => {
             this.axios.post(`/api/${type}`, data)
                 .then(res => {
-                    this.setData(res)
+                    if (type === 'login')
+                        this.setData(res)
                     resolve(res.data.message)
                 })
                 .catch(({ response }) => {
@@ -60,11 +61,11 @@ export default class Auth {
         router.push('/login')
     }
 
-    setData(res) {
-        this.token = `${res.data['token']}`
-        //Bearer
+    setData({data}) {
+        this.token = `${data['token']}`
         this.axios.defaults.headers.common['Authorization'] = this.token
-        localStorage.setItem('token', this.token)
+        localStorage.setItem('token', data.token)
+        this.user = data.user
         Auth.authenticated = true
     }
 }

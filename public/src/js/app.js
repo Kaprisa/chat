@@ -2309,6 +2309,14 @@ var _socket = _interopRequireDefault(__webpack_require__(/*! socket.io-client */
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+
+function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+
+function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
+
+function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+
 function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { Promise.resolve(value).then(_next, _throw); } }
 
 function _asyncToGenerator(fn) { return function () { var self = this, args = arguments; return new Promise(function (resolve, reject) { var gen = fn.apply(self, args); function _next(value) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value); } function _throw(err) { asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err); } _next(undefined); }); }; }
@@ -2326,8 +2334,7 @@ var _default = {
     return {
       socket: (0, _socket.default)('localhost:3000'),
       active: 0,
-      contacts: [],
-      messages: []
+      contacts: []
     };
   },
   mounted: function () {
@@ -2336,25 +2343,34 @@ var _default = {
     regeneratorRuntime.mark(function _callee() {
       var _this = this;
 
-      var _ref, data;
+      var _ref2, data;
 
       return regeneratorRuntime.wrap(function _callee$(_context) {
         while (1) {
           switch (_context.prev = _context.next) {
             case 0:
-              this.socket.on('message', function (text) {
-                _this.messages.push({
-                  text: text,
-                  sender: 'other'
+              this.socket.on('message', function (_ref) {
+                var msg = _ref.msg,
+                    email = _ref.email;
+
+                var contact = _this.contacts.find(function (c) {
+                  return c.email === email;
                 });
+
+                if (!contact.messages) contact.messages = [];
+                contact.messages = _toConsumableArray(contact.messages).concat([{
+                  text: msg,
+                  sender: email
+                }]);
+                _this.contacts = _toConsumableArray(_this.contacts);
               });
               _context.prev = 1;
               _context.next = 4;
               return this.$axios.get('/api/users');
 
             case 4:
-              _ref = _context.sent;
-              data = _ref.data;
+              _ref2 = _context.sent;
+              data = _ref2.data;
               this.contacts = data;
               _context.next = 12;
               break;
@@ -2378,11 +2394,17 @@ var _default = {
   }(),
   methods: {
     send: function send(text) {
-      this.messages.push({
+      var contact = this.contacts[this.active];
+      if (!contact.messages) contact.messages = [];
+      contact.messages = _toConsumableArray(contact.messages).concat([{
         text: text,
-        sender: 'i'
+        sender: this.$auth.user.email
+      }]);
+      this.contacts = _toConsumableArray(this.contacts);
+      this.socket.emit('message', {
+        msg: text,
+        email: this.$auth.user.email
       });
-      this.socket.emit('message', text);
     }
   }
 };
@@ -22320,7 +22342,8 @@ var render = function() {
       "div",
       {
         class:
-          "message message--" + (_vm.message.sender === "i" ? "i" : "other")
+          "message message--" +
+          (_vm.message.sender === this.$auth.user.email ? "i" : "other")
       },
       [_vm._v("\n        " + _vm._s(_vm.message.text) + "\n    ")]
     )
@@ -22580,7 +22603,7 @@ var render = function() {
             _vm._v(" "),
             _vm._l(_vm.contacts, function(c, index) {
               return _c("contact", {
-                key: c.name,
+                key: c.email,
                 attrs: { contact: c, active: index === _vm.active },
                 on: {
                   click: function($event) {
@@ -22593,27 +22616,41 @@ var render = function() {
           2
         ),
         _vm._v(" "),
-        _c(
-          "div",
-          { staticClass: "chat" },
-          [
-            _c("v-header", { attrs: { contact: _vm.contacts[_vm.active] } }),
-            _vm._v(" "),
-            _c(
+        _vm.contacts[_vm.active]
+          ? _c(
               "div",
-              { staticClass: "chat__messages-box" },
-              _vm._l(_vm.messages, function(m, index) {
-                return _c("message", {
-                  key: "message" + index,
-                  attrs: { message: { sender: m.sender, text: m.text } }
-                })
-              })
-            ),
-            _vm._v(" "),
-            _c("v-textarea", { on: { send: _vm.send } })
-          ],
-          1
-        )
+              { staticClass: "chat" },
+              [
+                _c("v-header", {
+                  attrs: { contact: _vm.contacts[_vm.active] }
+                }),
+                _vm._v(" "),
+                _c(
+                  "div",
+                  { staticClass: "chat__messages-box" },
+                  [
+                    _vm.contacts[_vm.active].messages
+                      ? _vm._l(_vm.contacts[_vm.active].messages, function(
+                          m,
+                          index
+                        ) {
+                          return _c("message", {
+                            key: "message" + index,
+                            attrs: {
+                              message: { sender: m.sender, text: m.text }
+                            }
+                          })
+                        })
+                      : _vm._e()
+                  ],
+                  2
+                ),
+                _vm._v(" "),
+                _c("v-textarea", { on: { send: _vm.send } })
+              ],
+              1
+            )
+          : _vm._e()
       ],
       1
     )
@@ -36710,7 +36747,7 @@ function () {
         var data = _ref.data;
         if (!data) throw Error('Not authenticated');
         Auth.pending = false;
-        _this.user = res.data;
+        _this.user = data;
         _this.token = token;
         _this.axios.defaults.headers.common['Authorization'] = _this.token;
         Auth.authenticated = true;
@@ -36731,8 +36768,7 @@ function () {
 
       return new Promise(function (resolve, reject) {
         _this2.axios.post("/api/".concat(type), data).then(function (res) {
-          _this2.setData(res);
-
+          if (type === 'login') _this2.setData(res);
           resolve(res.data.message);
         }).catch(function (_ref2) {
           var response = _ref2.response;
@@ -36751,11 +36787,12 @@ function () {
     }
   }, {
     key: "setData",
-    value: function setData(res) {
-      this.token = "".concat(res.data['token']); //Bearer
-
+    value: function setData(_ref3) {
+      var data = _ref3.data;
+      this.token = "".concat(data['token']);
       this.axios.defaults.headers.common['Authorization'] = this.token;
-      localStorage.setItem('token', this.token);
+      localStorage.setItem('token', data.token);
+      this.user = data.user;
       Auth.authenticated = true;
     }
   }]);

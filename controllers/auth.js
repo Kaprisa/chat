@@ -4,8 +4,15 @@ import passport from 'koa-passport'
 import User from '../db/models/User'
 
 export default router => {
-    router.get('/check', ctx => {
-        ctx.body = ctx.isAuthenticated() ? ctx.state.user : false
+    router.get('/check', async (ctx, next) => {
+        await passport.authenticate('jwt', {session: false})(ctx, next)
+
+        if (!ctx.state.user) {
+            ctx.status = 400
+            ctx.body = {error: 'invalid credentials'}
+            return
+        }
+        ctx.body = ctx.state.user
     }).post('/login', async (ctx, next) => {
         await passport.authenticate('local', { session: false })(ctx, next)
         if (ctx.state.user) {
@@ -14,7 +21,7 @@ export default router => {
                 name: ctx.state.user.name
             }
             const token = jwt.encode(payload, config.jwtSecret)
-            ctx.body = {token, message: 'Вы успешно авторизованы!'}
+            ctx.body = {token, message: 'Вы успешно авторизованы!', user: ctx.state.user}
         } else {
             ctx.status = 400
             ctx.body = {message: 'Invalid credentials'}
@@ -30,18 +37,5 @@ export default router => {
         ctx.logout()
         ctx.session = null
         ctx.redirect('/')
-    }).get('/private', async (ctx, next) => {
-        await passport.authenticate('jwt', {session: false})(ctx, next)
-
-        if (!ctx.state.user) {
-            ctx.status = 400
-            ctx.body = {error: 'invalid credentials'}
-            return
-        }
-
-        ctx.body = {
-            private: 'top most secret info',
-            email: ctx.state.user.email
-        }
     })
 }
