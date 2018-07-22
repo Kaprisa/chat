@@ -2,14 +2,14 @@
     <main class="home">
         <div class="form">
             <sidebar>
-                <search />
-               <contact @click="active = index" v-for="c, index in contacts" :key="c.email" :contact="c" :active="index === active"/>
+                <search @change="search"/>
+               <contact @click="active = c" v-for="c in filteredContacts" :key="c.email" :contact="c" :active="c === active"/>
             </sidebar>
-            <div class="chat" v-if="contacts[active]">
-                <v-header :contact="contacts[active]"/>
+            <div class="chat" v-if="active">
+                <v-header :contact="active"/>
                 <div class="chat__messages-box">
-                    <template v-if="contacts[active].messages">
-                        <message v-for="m, index in contacts[active].messages" :message="{sender: m.sender, text: m.text}" :key="`message${index}`"/>
+                    <template v-if="active.messages">
+                        <message v-for="m, index in active.messages" :message="{sender: m.sender, text: m.text}" :key="`message${index}`"/>
                     </template>
                 </div>
                 <v-textarea @send="send"/>
@@ -40,8 +40,10 @@
         data() {
             return {
                 socket: io('localhost:3000'),
-                active: 0,
-                contacts: []
+                active: null,
+                contacts: [],
+                filteredContacts: [],
+                filter: ''
             }
         },
         async mounted() {
@@ -52,26 +54,34 @@
                     text: msg,
                     sender: email
                 }]
-                this.contacts = [...this.contacts]
+                this.search()
             })
             try {
                 const { data } = await this.$axios.get('/api/users')
-                this.contacts = data
+                // user не всегда успевает прийти
+                this.contacts = data.filter(c => c.email !== this.$auth.user.email)
+                this.search()
             } catch (e) {
                 console.error(e)
             }
         },
         methods: {
             send(text) {
-                const contact = this.contacts[this.active]
-                if (!contact.messages)
-                    contact.messages = []
-                contact.messages = [...contact.messages, {
+                if (!this.active.messages)
+                    this.active.messages = []
+                this.active.messages = [...this.active.messages, {
                     text,
                     sender: this.$auth.user.email
                 }]
-                this.contacts = [...this.contacts]
+                this.search()
                 this.socket.emit('message', ({msg: text, email: this.$auth.user.email}))
+            },
+            search(v) {
+                if (v)
+                    this.filter = v.toLowerCase()
+                else if (v !== undefined)
+                    this.filter = ''
+                this.filteredContacts = this.contacts.filter(c => c.name.toLowerCase().startsWith(this.filter))
             }
         }
     }

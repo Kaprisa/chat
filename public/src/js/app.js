@@ -1963,6 +1963,7 @@ exports.default = void 0;
 //
 //
 //
+//
 var _default = {
   props: {
     contact: Object
@@ -2333,8 +2334,10 @@ var _default = {
   data: function data() {
     return {
       socket: (0, _socket.default)('localhost:3000'),
-      active: 0,
-      contacts: []
+      active: null,
+      contacts: [],
+      filteredContacts: [],
+      filter: ''
     };
   },
   mounted: function () {
@@ -2362,7 +2365,8 @@ var _default = {
                   text: msg,
                   sender: email
                 }]);
-                _this.contacts = _toConsumableArray(_this.contacts);
+
+                _this.search();
               });
               _context.prev = 1;
               _context.next = 4;
@@ -2371,21 +2375,25 @@ var _default = {
             case 4:
               _ref2 = _context.sent;
               data = _ref2.data;
-              this.contacts = data;
-              _context.next = 12;
+              // user не всегда успевает прийти
+              this.contacts = data.filter(function (c) {
+                return c.email !== _this.$auth.user.email;
+              });
+              this.search();
+              _context.next = 13;
               break;
 
-            case 9:
-              _context.prev = 9;
+            case 10:
+              _context.prev = 10;
               _context.t0 = _context["catch"](1);
               console.error(_context.t0);
 
-            case 12:
+            case 13:
             case "end":
               return _context.stop();
           }
         }
-      }, _callee, this, [[1, 9]]);
+      }, _callee, this, [[1, 10]]);
     }));
 
     return function mounted() {
@@ -2394,16 +2402,23 @@ var _default = {
   }(),
   methods: {
     send: function send(text) {
-      var contact = this.contacts[this.active];
-      if (!contact.messages) contact.messages = [];
-      contact.messages = _toConsumableArray(contact.messages).concat([{
+      if (!this.active.messages) this.active.messages = [];
+      this.active.messages = _toConsumableArray(this.active.messages).concat([{
         text: text,
         sender: this.$auth.user.email
       }]);
-      this.contacts = _toConsumableArray(this.contacts);
+      this.search();
       this.socket.emit('message', {
         msg: text,
         email: this.$auth.user.email
+      });
+    },
+    search: function search(v) {
+      var _this2 = this;
+
+      if (v) this.filter = v.toLowerCase();else if (v !== undefined) this.filter = '';
+      this.filteredContacts = this.contacts.filter(function (c) {
+        return c.name.toLowerCase().startsWith(_this2.filter);
       });
     }
   }
@@ -22302,6 +22317,15 @@ var render = function() {
     [
       _vm.contact
         ? [
+            _c("img", {
+              staticClass: "header__image",
+              attrs: {
+                src: _vm.contact.image
+                  ? "/images/" + _vm.contact.image
+                  : "/images/person.jpeg"
+              }
+            }),
+            _vm._v(" "),
             _c("span", { staticClass: "header__name" }, [
               _vm._v(_vm._s(_vm.contact.name))
             ]),
@@ -22339,7 +22363,7 @@ var render = function() {
   var _c = _vm._self._c || _h
   return _c("div", { staticClass: "message__box" }, [
     _c(
-      "div",
+      "span",
       {
         class:
           "message message--" +
@@ -22420,23 +22444,24 @@ var render = function() {
   var _vm = this
   var _h = _vm.$createElement
   var _c = _vm._self._c || _h
-  return _vm._m(0)
+  return _c("div", { staticClass: "search" }, [
+    _c("input", {
+      staticClass: "search__input",
+      attrs: { type: "text" },
+      on: {
+        input: function(e) {
+          return _vm.$emit("change", e.target.value)
+        }
+      }
+    }),
+    _vm._v(" "),
+    _c("img", {
+      staticClass: "search__img",
+      attrs: { src: __webpack_require__(/*! ../../images/search.svg */ "./images/search.svg") }
+    })
+  ])
 }
-var staticRenderFns = [
-  function() {
-    var _vm = this
-    var _h = _vm.$createElement
-    var _c = _vm._self._c || _h
-    return _c("div", { staticClass: "search" }, [
-      _c("input", { staticClass: "search__input", attrs: { type: "text" } }),
-      _vm._v(" "),
-      _c("img", {
-        staticClass: "search__img",
-        attrs: { src: __webpack_require__(/*! ../../images/search.svg */ "./images/search.svg") }
-      })
-    ])
-  }
-]
+var staticRenderFns = []
 render._withStripped = true
 
 
@@ -22599,15 +22624,15 @@ var render = function() {
         _c(
           "sidebar",
           [
-            _c("search"),
+            _c("search", { on: { change: _vm.search } }),
             _vm._v(" "),
-            _vm._l(_vm.contacts, function(c, index) {
+            _vm._l(_vm.filteredContacts, function(c) {
               return _c("contact", {
                 key: c.email,
-                attrs: { contact: c, active: index === _vm.active },
+                attrs: { contact: c, active: c === _vm.active },
                 on: {
                   click: function($event) {
-                    _vm.active = index
+                    _vm.active = c
                   }
                 }
               })
@@ -22616,24 +22641,19 @@ var render = function() {
           2
         ),
         _vm._v(" "),
-        _vm.contacts[_vm.active]
+        _vm.active
           ? _c(
               "div",
               { staticClass: "chat" },
               [
-                _c("v-header", {
-                  attrs: { contact: _vm.contacts[_vm.active] }
-                }),
+                _c("v-header", { attrs: { contact: _vm.active } }),
                 _vm._v(" "),
                 _c(
                   "div",
                   { staticClass: "chat__messages-box" },
                   [
-                    _vm.contacts[_vm.active].messages
-                      ? _vm._l(_vm.contacts[_vm.active].messages, function(
-                          m,
-                          index
-                        ) {
+                    _vm.active.messages
+                      ? _vm._l(_vm.active.messages, function(m, index) {
                           return _c("message", {
                             key: "message" + index,
                             attrs: {

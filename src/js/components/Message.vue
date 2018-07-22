@@ -1,8 +1,8 @@
 <template>
     <div class="message__box">
-        <div :class="`message message--${message.sender === this.$auth.user.email ? 'i' : 'other'}`">
+        <span :class="`message message--${message.sender === this.$auth.user.email ? 'i' : 'other'}`">
             {{message.text}}
-        </div>
+        </span>
     </div>
 </template>
 

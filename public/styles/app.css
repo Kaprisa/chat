@@ -238,6 +238,7 @@ body {
   align-items: center;
   justify-items: start;
   padding: 1rem;
+  cursor: pointer;
 }
 
 .contact--active {
@@ -278,17 +279,29 @@ body {
   width: 100%;
   padding: 1rem;
   display: grid;
-  grid-template-columns: max-content;
-  grid-template-rows: 2.5rem 2.5rem;
+  grid-template-columns: 6.9rem 1fr min-content;
+  grid-template-rows: 3rem 3rem;
   justify-items: start;
 }
 
+.header__image {
+  border-radius: 50%;
+  width: 6rem;
+  height: 6rem;
+  grid-column: 1 / 2;
+  grid-row: 1 / 3;
+}
+
 .header__name {
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
   font-weight: bold;
   font-size: 1.6rem;
 }
 
 .header__last-seen {
+  grid-column: 2 / 3;
+  grid-row: 2 / 3;
   font-size: 1.4rem;
   color: #53637F;
 }
@@ -296,9 +309,10 @@ body {
 .message {
   color: #fff;
   font-size: 1.4rem;
-  max-width: 40%;
+  max-width: 45%;
   border-radius: .5rem;
   padding: 1rem;
+  word-wrap: break-word;
 }
 
 .message__box {
@@ -306,6 +320,7 @@ body {
   flex-direction: column;
   width: 100%;
   padding: .3rem;
+  text-align: left;
 }
 
 .message--i {
