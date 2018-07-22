@@ -3,13 +3,13 @@
         <div class="form">
             <sidebar>
                 <search @change="search"/>
-               <contact @click="active = c" v-for="c in filteredContacts" :key="c.email" :contact="c" :active="c === active"/>
+               <contact @click="changeActive(c)" v-for="c in filteredContacts" :key="c.email" :contact="c" :active="active && c.id === active.id"/>
             </sidebar>
             <div class="chat" v-if="active">
                 <v-header :contact="active"/>
                 <div class="chat__messages-box">
                     <template v-if="active.messages">
-                        <message v-for="m, index in active.messages" :message="{sender: m.sender, text: m.text}" :key="`message${index}`"/>
+                        <message v-for="m, index in active.messages" :message="m" :key="`message${index}`"/>
                     </template>
                 </div>
                 <v-textarea @send="send"/>
@@ -47,14 +47,16 @@
             }
         },
         async mounted() {
-            this.socket.on('message', ({msg, email}) => {
-                const contact = this.contacts.find(c => c.email === email)
+            this.socket.on('message', msg => {
+                const contact = this.contacts.find(c => c.id === msg.from_id)
                 if (!contact.messages) contact.messages = []
-                contact.messages = [...contact.messages, {
-                    text: msg,
-                    sender: email
-                }]
+                contact.messages = [...contact.messages, msg]
                 this.search()
+            })
+            this.socket.on('messages', ({from_id, to_id, messages}) => {
+                if (from_id !== this.$auth.user.id) return
+                this.contacts.find(c => c.id === to_id).messages = messages
+                this.active = {...this.active}
             })
             try {
                 const { data } = await this.$axios.get('/api/users')
@@ -69,12 +71,16 @@
             send(text) {
                 if (!this.active.messages)
                     this.active.messages = []
+                const from_id = this.$auth.user.id
+                const to_id = this.active.id
                 this.active.messages = [...this.active.messages, {
                     text,
-                    sender: this.$auth.user.email
+                    from_id,
+                    to_id,
+                    created_at: Date.now()
                 }]
                 this.search()
-                this.socket.emit('message', ({msg: text, email: this.$auth.user.email}))
+                this.socket.emit('message', ({msg: text, from_id, to_id}))
             },
             search(v) {
                 if (v)
@@ -82,6 +88,10 @@
                 else if (v !== undefined)
                     this.filter = ''
                 this.filteredContacts = this.contacts.filter(c => c.name.toLowerCase().startsWith(this.filter))
+            },
+            changeActive(contact) {
+                this.active = contact
+                this.socket.emit('getMessages', {from_id: this.$auth.user.id, to_id: this.active.id})
             }
         }
     }
